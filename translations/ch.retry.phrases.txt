@@ -1,0 +1,14 @@
+"Phrases"
+{
+	"Reconnected target"
+    {
+        "#format"       "{1:t}"
+        "en"            "Reconnected {1}."
+    }
+    
+    "Reconnected target reason"
+    {
+        "#format"       "{1:t},{2:s}"
+        "en"            "Reconnected {1} (Reason: {2})"
+    }
+}
