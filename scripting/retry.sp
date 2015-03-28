@@ -1,126 +1,151 @@
+/*
+    sm_retry
+
+    Rewritten from sm_kick by: Chdata
+*/
+
+#pragma semicolon 1
 #include <sourcemod>
+
+#define PLUGIN_VERSION          "0x01"
+
+#define TF_MAX_PLAYERS          34
+#define FCVAR_VERSION           FCVAR_NOTIFY|FCVAR_DONTRECORD|FCVAR_CHEAT
+
+public Plugin:myinfo = {
+    name = "Reconnector",
+    author = "Chdata",
+    description = "Allows connected players to be forcibly reconnected via sm_retry",
+    version = PLUGIN_VERSION,
+    url = "http://steamcommunity.com/groups/tf2data"
+};
 
 public OnPluginStart()
 {
-    RegConsoleCmd("sm_retry", Reconnect);
-    RegConsoleCmd("sm_rejoin", Reconnect);
-    RegConsoleCmd("sm_reconnect", Reconnect);
-    LoadTranslations("ch.retry.phrases");
+    RegConsoleCmd("sm_retry", Cmd_Reconnect);
+    RegConsoleCmd("sm_rejoin", Cmd_Reconnect);
+    RegConsoleCmd("sm_reconnect", Cmd_Reconnect);
+    LoadTranslations("core.phrases");
+    LoadTranslations("retry.phrases");
+    CreateConVar("cv_retry_version", PLUGIN_VERSION, "Retry Version", FCVAR_VERSION);
 }
 
-public Action:Reconnect(iClient, iArgc)
+public Action:Cmd_Reconnect(iClient, iArgc)
 {   
-    decl String:target_name[MAX_TARGET_LENGTH];
-    GetClientName(iClient, target_name, sizeof(target_name));
+    //decl String:szTargetName[MAX_TARGET_LENGTH];
+    //GetClientName(iClient, szTargetName, sizeof(szTargetName));
 
     if (!iArgc)
     {
-        ShowActivity2(iClient, "[SM] ", "%t", "Reconnected target", "_s", target_name); // "Reconnected by admin"
-        ReplyToCommand(iClient, "[SM] %t", "Reconnected target", "_s", target_name);
+        //ShowActivity2(iClient, "[SM] ", "%t", "Reconnected target", "_s", szTargetName); // "Reconnected by admin"
+        //ReplyToCommand(iClient, "[SM] %t", "Reconnected target", "_s", szTargetName);
         //LogAction(iClient, iClient, "\"%L\" reconnected \"%L\" (reason \"%s\")", iClient, iClient, reason);
         ClientCommand(iClient, "retry");
     }
     else if (CheckCommandAccess(iClient, "sm_retry", ADMFLAG_KICK))
     {
+        decl String:szTargetName[MAX_TARGET_LENGTH];
+        GetClientName(iClient, szTargetName, sizeof(szTargetName));
+
         decl String:szArguments[256];
         GetCmdArgString(szArguments, sizeof(szArguments));
 
         decl String:szTarget[65];
-        new len = BreakString(szArguments, szTarget, sizeof(szTarget));
+        new iLen = BreakString(szArguments, szTarget, sizeof(szTarget));
         
-        if (len == -1)
+        if (iLen == -1)
         {
             /* Safely null terminate */
-            len = 0;
+            iLen = 0;
             szArguments[0] = '\0';
         }
 
-        decl String:reason[64];
-        Format(reason, sizeof(reason), szArguments[len]);
+        decl String:szReason[64];
+        Format(szReason, sizeof(szReason), szArguments[iLen]);
 
         if (StrEqual(szTarget, "@me"))
         {
-            if (reason[0] == '\0')
+            if (szReason[0] == '\0')
             {
-                ShowActivity2(iClient, "[SM] ", "%t", "Reconnected target", "_s", target_name);
-                ReplyToCommand(iClient, "[SM] %t", "Reconnected target", "_s", target_name);
+                ShowActivity2(iClient, "[SM] ", "%t", "Reconnected target", "_s", szTargetName);
+                //ReplyToCommand(iClient, "[SM] %t", "Reconnected target", "_s", szTargetName);
             }
             else
             {
-                ShowActivity2(iClient, "[SM] ", "%t", "Reconnected target reason", "_s", target_name, reason);
-                ReplyToCommand(iClient, "[SM] %t", "Reconnected target reason", "_s", target_name, reason);
+                ShowActivity2(iClient, "[SM] ", "%t", "Reconnected target reason", "_s", szTargetName, szReason);
+                //ReplyToCommand(iClient, "[SM] %t", "Reconnected target reason", "_s", szTargetName, szReason);
             }
 
-            //LogAction(iClient, iClient, "\"%L\" reconnected \"%L\" (reason \"%s\")", iClient, iClient, reason);
+            //LogAction(iClient, iClient, "\"%L\" reconnected \"%L\" (reason \"%s\")", iClient, iClient, szReason);
 
             ClientCommand(iClient, "retry");
             return Plugin_Handled;
         }
 
-        decl target_list[MAXPLAYERS+1], target_count, bool:tn_is_ml;
+        decl iTargetList[MAXPLAYERS + 1], iTargetCount, bool:bMultiLang;
         
-        if ((target_count = ProcessTargetString(
+        if ((iTargetCount = ProcessTargetString(
                 szTarget,
                 iClient, 
-                target_list, 
+                iTargetList, 
                 MAXPLAYERS, 
                 COMMAND_FILTER_CONNECTED|COMMAND_FILTER_NO_BOTS,
-                target_name,
-                sizeof(target_name),
-                tn_is_ml)) > 0)
+                szTargetName,
+                sizeof(szTargetName),
+                bMultiLang)) > 0)
         {
-            if (tn_is_ml)
+            if (bMultiLang)
             {
-                if (reason[0] == '\0')
+                if (szReason[0] == '\0')
                 {
-                    ShowActivity2(iClient, "[SM] ", "%t", "Reconnected target", target_name);
-                    ReplyToCommand(iClient, "[SM] %t", "Reconnected target", target_name);
+                    ShowActivity2(iClient, "[SM] ", "%t", "Reconnected target", szTargetName);
+                    //ReplyToCommand(iClient, "[SM] %t", "Reconnected target", szTargetName);
                 }
                 else
                 {
-                    ShowActivity2(iClient, "[SM] ", "%t", "Reconnected target reason", target_name, reason);
-                    ReplyToCommand(iClient, "[SM] %t", "Reconnected target reason", target_name, reason);
+                    ShowActivity2(iClient, "[SM] ", "%t", "Reconnected target reason", szTargetName, szReason);
+                    //ReplyToCommand(iClient, "[SM] %t", "Reconnected target reason", szTargetName, szReason);
                 }
             }
             else
             {
-                if (reason[0] == '\0')
+                if (szReason[0] == '\0')
                 {
-                    ShowActivity2(iClient, "[SM] ", "%t", "Reconnected target", "_s", target_name);
-                    ReplyToCommand(iClient, "[SM] %t", "Reconnected target", "_s", target_name);
+                    ShowActivity2(iClient, "[SM] ", "%t", "Reconnected target", "_s", szTargetName);
+                    //ReplyToCommand(iClient, "[SM] %t", "Reconnected target", "_s", szTargetName);
                 }
                 else
                 {
-                    ShowActivity2(iClient, "[SM] ", "%t", "Reconnected target reason", "_s", target_name, reason);
-                    ReplyToCommand(iClient, "[SM] %t", "Reconnected target reason", "_s", target_name, reason);
+                    ShowActivity2(iClient, "[SM] ", "%t", "Reconnected target reason", "_s", szTargetName, szReason);
+                    //ReplyToCommand(iClient, "[SM] %t", "Reconnected target reason", "_s", szTargetName, szReason);
                 }
             }
 
-            new kick_self = 0;
+            new iKickMySelf = 0;
             
-            for (new i = 0; i < target_count; i++)
+            for (new i = 0; i < iTargetCount; i++)
             {
                 /* Kick everyone else first */
-                if (target_list[i] == iClient)
+                if (iTargetList[i] == iClient)
                 {
-                    kick_self = iClient;
+                    iKickMySelf = iClient;
                 }
                 else
                 {
-                    ClientCommand(target_list[i], "retry");
-                    //LogAction(iClient, target_list[i], "\"%L\" reconnected \"%L\" (reason \"%s\")", iClient, target_list[i], reason);
+                    ClientCommand(iTargetList[i], "retry");
+                    //LogAction(iClient, iTargetList[i], "\"%L\" reconnected \"%L\" (reason \"%s\")", iClient, iTargetList[i], szReason);
                 }
             }
             
-            if (kick_self)
+            if (iKickMySelf)
             {
-                //LogAction(iClient, iClient, "\"%L\" reconnected \"%L\" (reason \"%s\")", iClient, iClient, reason);
+                //LogAction(iClient, iClient, "\"%L\" reconnected \"%L\" (reason \"%s\")", iClient, iClient, szReason);
                 ClientCommand(iClient, "retry");
             }
         }
         else
         {
-            ReplyToTargetError(iClient, target_count);
+            ReplyToTargetError(iClient, iTargetCount);
         }
     }
     else
