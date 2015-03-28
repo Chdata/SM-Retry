@@ -82,7 +82,7 @@ public Action:Cmd_Reconnect(iClient, iArgc)
             return Plugin_Handled;
         }
 
-        decl iTargetList[MAXPLAYERS + 1], iTargetCount, bool:bMultiLang;
+        decl iTargetList[MAXPLAYERS], iTargetCount, bool:bMultiLang;
         
         if ((iTargetCount = ProcessTargetString(
                 szTarget,
